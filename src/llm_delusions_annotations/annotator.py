@@ -140,16 +140,31 @@ class Annotator:
         annotation_ids: List[str] = None,
         *,
         preceding_count: int = 0,
+        last_assistant_only: bool = False
     ) -> Sequence[Dict[str, ClassifyResult]]:
         """Return annotations for the chat."""
         messages = list(
             chat_message_iterator(chat_messages, preceding_count=preceding_count)
         )
-        return self.annotate_messages(
-            messages,
-            model=model,
-            annotation_ids=annotation_ids,
+        if not last_assistant_only:
+            return self.annotate_messages(
+                messages,
+                model=model,
+                annotation_ids=annotation_ids,
+            )
+
+        results = [{} for _ in messages]          # keeps output aligned with chat
+        last_index = next(
+            (i for i in range(len(messages) - 1, -1, -1)
+             if messages[i].role == "assistant"),
+            None,
         )
+        if last_index is None:
+            return results
+        results[last_index] = self.annotate_messages(
+            [messages[last_index]], model=model, annotation_ids=annotation_ids
+        )[0]
+        return results
 
     def annotate_messages(
         self,
@@ -204,6 +219,7 @@ class Annotator:
         annotation_ids: List[str] = None,
         *,
         preceding_count: int = 0,
+        last_assistant_only: bool = False
     ) -> Iterator[ChatWithAnnotations]:
         """Yield annotated chats from a single transcript file."""
 
@@ -214,5 +230,6 @@ class Annotator:
                 model,
                 annotation_ids,
                 preceding_count=preceding_count,
+                last_assistant_only=last_assistant_only
             )
             yield ChatWithAnnotations(chat, annotations)
