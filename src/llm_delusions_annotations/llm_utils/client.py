@@ -94,7 +94,7 @@ def apply_reasoning_defaults(
     litellm.drop_params = True
     params.setdefault("temperature", 1)
     params.setdefault("reasoning_effort", "none")
-    params.setdefault("reasoning", {"enabled": False})
+    #params.setdefault("reasoning", {"enabled": False})
 
 
 def completion(
